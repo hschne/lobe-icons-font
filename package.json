@@ -1,0 +1,16 @@
+{
+  "name": "lobe-icons-font",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Glyph font of lobehub AI/LLM provider icons for terminals and waybar",
+  "license": "MIT",
+  "scripts": {
+    "build": "./build.sh"
+  },
+  "dependencies": {
+    "@lobehub/icons-static-svg": "*"
+  },
+  "devDependencies": {
+    "fantasticon": "^3.0.0"
+  }
+}
