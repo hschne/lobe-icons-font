@@ -17,12 +17,45 @@ from pathlib import Path
 
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.tables._c_m_a_p import CmapSubtable
+from fontTools.pens.ttGlyphPen import TTGlyphPen
+from fontTools.pens.transformPen import TransformPen
 
 BASE = 0xF4000
 CEILING = 0xF47FF  # 2048-slot reserved block
 TTF = Path("dist/lobe-icons.ttf")
 MAP = Path("codepoints.json")
 SVG = Path("svg")
+
+# fantasticon emits glyphs filling the full em (y=0..em), so they sit too high
+# next to text. Nerd Fonts' Material Design icons instead span y=[-0.062em,
+# 0.772em] - ~0.83em tall, centered ~0.355em above the baseline. Match that:
+# scale glyphs down and shift them onto the text's optical center.
+ICON_YMIN = -0.062
+ICON_YMAX = 0.772
+
+
+def reposition(font: TTFont) -> None:
+    upm = font["head"].unitsPerEm
+    scale = ICON_YMAX - ICON_YMIN  # source box is a full em (0..1)
+    ty = round(ICON_YMIN * upm)
+    tx = round(upm * (1 - scale) / 2)  # re-center horizontally in the advance
+    glyf = font["glyf"]
+    gs = font.getGlyphSet()
+    redrawn = {}
+    for name in glyf.keys():
+        pen = TTGlyphPen(gs)
+        gs[name].draw(TransformPen(pen, (scale, 0, 0, scale, tx, ty)))
+        redrawn[name] = pen.glyph()
+    for name, glyph in redrawn.items():
+        glyf[name] = glyph
+
+    descent = -ty + round(0.02 * upm)  # cover the new sub-baseline extent
+    font["hhea"].ascent = upm
+    font["hhea"].descent = -descent
+    os2 = font["OS/2"]
+    os2.sTypoAscender, os2.sTypoDescender, os2.sTypoLineGap = upm, -descent, 0
+    os2.usWinAscent = round(ICON_YMAX * upm) + round(0.02 * upm)
+    os2.usWinDescent = descent
 
 
 def main() -> int:
@@ -57,6 +90,7 @@ def main() -> int:
 
     font["cmap"].tableVersion = 0
     font["cmap"].tables = [subtable(3, 10), subtable(0, 4)]
+    reposition(font)
     font.save(TTF)
 
     MAP.write_text(json.dumps(dict(sorted(pins.items(), key=lambda kv: kv[1])), indent=2) + "\n")
