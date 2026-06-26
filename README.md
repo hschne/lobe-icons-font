@@ -20,13 +20,29 @@ valid across rebuilds.
 
 ## Build
 
-Needs `node`, `python3` with `fonttools`, and `picosvg`.
+Needs Node.js only.
 
 ```bash
-./build.sh        # svgs -> fantasticon -> format-12 cmap rewrite + pin
+npm ci
+npm run build
 ```
 
-Output is `dist/lobe-icons.ttf`. Re-run after lobe-icons updates to pull new logos.
+Output is `dist/lobe-icons.ttf`. Re-run after updating `@lobehub/icons-static-svg`
+to pull new logos.
+
+The build is a single JS pipeline:
+
+1. copy monochrome base SVGs into `svg/`
+2. assign stable codepoints from `codepoints.json`
+3. generate a UCS-4/format-12 TTF at `dist/lobe-icons.ttf`
+
+## Release
+
+Use the manual GitHub Action:
+
+1. open **Actions -> Release icons**
+2. run the workflow with a tag like `v0.1.0`
+3. download `lobe-icons.ttf`, `codepoints.json`, or the release tarball from the GitHub release
 
 ## Install
 
@@ -72,7 +88,5 @@ Alacritty has no per-glyph fallback and is not supported.
 
 - Only the monochrome `name.svg` icons are built. A font glyph is single-color,
   so the `-color` and `-text` variants are skipped.
-- A few icons (cohere, huawei, ...) use multi-subpath SVGs that fantasticon's
-  tracer drops; `build.sh` normalizes those through picosvg first.
 - lobe-icons notes the logos may be copyright-protected. Fine for personal use,
   check before redistributing.

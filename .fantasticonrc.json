@@ -1,9 +1,0 @@
-{
-  "inputDir": "svg",
-  "outputDir": "dist",
-  "name": "lobe-icons",
-  "fontTypes": ["ttf"],
-  "assetTypes": ["json"],
-  "normalize": true,
-  "prefix": "ai"
-}

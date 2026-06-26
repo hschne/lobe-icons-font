@@ -1,23 +1,35 @@
 #!/usr/bin/env bash
-# Build dist/ai-icons.ttf from lobehub icons.
-#   svgs -> fantasticon (ttf) -> format-12 cmap rewrite + stable codepoint pin
+
 set -euo pipefail
-cd "$(dirname "$0")"
 
-npm install --silent
-node scripts/collect.mjs
+function main() {
+  case "${1:-}" in
+  "")
+    cd "$(dirname "$0")"
+    node scripts/build.mjs
+    ;;
+  -h | --help)
+    usage
+    ;;
+  *)
+    die "Unknown option: $1"
+    ;;
+  esac
+}
 
-# A few icons use multi-subpath / fill-opacity / even-odd constructs that
-# fantasticon's tracer silently drops. picosvg resolves them. Only these are
-# normalized: running picosvg over every icon trips a Node-stream bug in the
-# tracer, so keep the blast radius to the known offenders.
-for name in cohere dreammachine hermesagent huawei; do
-  f="svg/$name.svg"
-  [ -f "$f" ] && picosvg "$f" > "$f.tmp" && mv "$f.tmp" "$f"
-done
+usage() {
+  cat <<EOF
+Usage: $(basename "$0")
 
-mkdir -p dist
-npx fantasticon
-python3 scripts/remap.py
+Build dist/lobe-icons.ttf from @lobehub/icons-static-svg.
+EOF
+}
 
-echo "done: dist/lobe-icons.ttf"
+die() {
+  echo "Error: $1" >&2
+  exit "${2:-1}"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi

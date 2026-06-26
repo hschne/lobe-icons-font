@@ -1,0 +1,72 @@
+name: Release icons
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, for example v0.1.0
+        required: true
+        type: string
+      prerelease:
+        description: Mark the GitHub release as a prerelease
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build font
+        run: npm run build
+
+      - name: Verify generated files are committed
+        run: git diff --exit-code -- codepoints.json dist/lobe-icons.ttf
+
+      - name: Package release artifact
+        run: |
+          mkdir -p release
+          cp dist/lobe-icons.ttf codepoints.json README.md release/
+          tar -czf "lobe-icons-font-${{ inputs.tag }}.tar.gz" -C release lobe-icons.ttf codepoints.json README.md
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          args=(
+            "$TAG"
+            dist/lobe-icons.ttf
+            codepoints.json
+            "lobe-icons-font-$TAG.tar.gz"
+            --target "$GITHUB_SHA"
+            --title "$TAG"
+            --notes "Built from $GITHUB_SHA."
+          )
+
+          if [[ "$PRERELEASE" == "true" ]]; then
+            args+=(--prerelease)
+          fi
+
+          gh release create "${args[@]}"

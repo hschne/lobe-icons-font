@@ -5,12 +5,14 @@
   "description": "Glyph font of lobehub AI/LLM provider icons for terminals and waybar",
   "license": "MIT",
   "scripts": {
-    "build": "./build.sh"
+    "build": "node scripts/build.mjs"
   },
   "dependencies": {
     "@lobehub/icons-static-svg": "*"
   },
   "devDependencies": {
-    "fantasticon": "^3.0.0"
+    "svg2ttf": "^6.1.0",
+    "svgicons2svgfont": "^12.0.0",
+    "svgpath": "^2.6.0"
   }
 }
