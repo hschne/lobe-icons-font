@@ -1,22 +1,72 @@
 name: Release icons
 
 on:
+  schedule:
+    - cron: "17 4 * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: release-icons
+  cancel-in-progress: false
 
 defaults:
   run:
     shell: bash
 
 jobs:
-  release:
+  detect:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.versions.outputs.version }}
+      should_build: ${{ steps.versions.outputs.should_build }}
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+
+      - name: Check latest @lobehub/icons release
+        id: versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          current_package="$(node -p "require('./package.json').version")"
+          current_icons="$(node -p "require('./package.json').dependencies['@lobehub/icons']")"
+          version="$(npm view @lobehub/icons version)"
+          tag="v$version"
+
+          should_build=false
+          if [[ "$current_package" != "$version" || "$current_icons" != "$version" ]]; then
+            should_build=true
+          elif ! gh release view "$tag" >/dev/null 2>&1; then
+            should_build=true
+          fi
+
+          {
+            echo "version=$version"
+            echo "should_build=$should_build"
+          } >> "$GITHUB_OUTPUT"
+
+  build-font:
+    if: needs.detect.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    needs: detect
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -27,26 +77,131 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check generated files
-        run: npm run check
-
-      - name: Package release artifact
+      - name: Update package to matching icon release
         run: |
-          tag="v$(node -p "require('./package.json').version")"
-          mkdir -p release
-          cp dist/lobe-icons.ttf codepoints.json README.md LICENSE release/
-          tar -czf "lobe-icons-font-$tag.tar.gz" -C release lobe-icons.ttf codepoints.json README.md LICENSE
-          echo "tag=$tag" >> "$GITHUB_ENV"
+          version="${{ needs.detect.outputs.version }}"
+          npm pkg set "version=$version"
+          npm install --save-exact "@lobehub/icons@$version"
+
+      - name: Build font
+        run: npm run build
+
+      - name: Commit version and codepoints
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add package.json package-lock.json codepoints.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+
+          git commit -m "Release lobe-icons-font ${{ needs.detect.outputs.version }}"
+          git push
+
+      - name: Upload font artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lobe-icons-font
+          path: dist/lobe-icons.ttf
+
+  build-docs:
+    if: needs.detect.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    needs:
+      - detect
+      - build-font
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download font artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lobe-icons-font
+          path: dist
+
+      - name: Generate docs assets
+        run: npm run build:docs
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: docs
+          bundler-cache: true
+
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Build docs
+        working-directory: docs
+        run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
+        env:
+          JEKYLL_ENV: production
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs/_site
+
+  publish-release:
+    if: needs.detect.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    needs:
+      - detect
+      - build-font
+
+    steps:
+      - name: Download font artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lobe-icons-font
+          path: dist
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
+          version="${{ needs.detect.outputs.version }}"
+          tag="v$version"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists."
+            exit 0
+          fi
+
           gh release create \
             "$tag" \
             dist/lobe-icons.ttf \
-            codepoints.json \
-            "lobe-icons-font-$tag.tar.gz" \
-            --target "$GITHUB_SHA" \
             --title "$tag" \
-            --notes "Built from $GITHUB_SHA."
+            --notes "Built from @lobehub/icons $version."
+
+  deploy-docs:
+    if: needs.detect.outputs.should_build == 'true'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs:
+      - detect
+      - build-docs
+      - publish-release
+
+    steps:
+      - name: Deploy docs
+        id: deployment
+        uses: actions/deploy-pages@v4

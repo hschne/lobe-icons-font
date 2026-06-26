@@ -1,0 +1,116 @@
+---
+layout: default
+title: Icons
+---
+
+<div class="page">
+  <section class="hero">
+    <h1 class="hero__title">
+      Lobe Icons <span class="hero__accent">Font</span>
+    </h1>
+    <p class="hero__subtitle">
+      A glyph font of {{ site.data.icons | size }} monochrome AI / LLM provider
+      icons for terminals, status bars, and the web.
+    </p>
+    <div class="hero__actions">
+      <a
+        class="btn btn--solid"
+        href="https://github.com/hschne/lobe-icons-font"
+        rel="noreferrer"
+        target="_blank"
+      >
+        <i class="li li-github" aria-hidden="true"></i>
+        <span>GitHub</span>
+      </a>
+      <a class="btn btn--outline" href="#grid">Browse icons</a>
+    </div>
+  </section>
+
+  <div class="search">
+    <label class="search__label" for="search-input">Search icons</label>
+    <svg
+      class="search__icon"
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <circle cx="11" cy="11" r="7"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input
+      id="search-input"
+      class="search__input"
+      type="search"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Search by brand or model keywords…"
+    />
+  </div>
+
+  <ul class="grid" id="grid">
+    {% for icon in site.data.icons %}
+    <li
+      class="card"
+      data-slug="{{ icon.slug }}"
+      data-title="{{ icon.title | escape }}"
+      data-hex="{{ icon.hex }}"
+    >
+      <button
+        type="button"
+        class="card__glyph"
+        data-copy="glyph"
+        aria-label="Copy glyph for {{ icon.title | escape }}"
+      >
+        <i class="li li-{{ icon.slug }}" aria-hidden="true"></i>
+      </button>
+
+      <div class="card__title-row">
+        <span class="card__title" title="{{ icon.title | escape }}"
+          >{{ icon.title }}</span
+        >
+        <button
+          type="button"
+          class="card__icon-btn"
+          data-copy="class"
+          aria-label="Copy HTML class for {{ icon.title | escape }}"
+        >
+          <span class="card__icon-btn-glyph" aria-hidden="true">&#x2398;</span>
+        </button>
+      </div>
+
+      <div class="card__footer">
+        <button
+          type="button"
+          class="card__footer-cell card__hex"
+          data-copy="hex"
+          aria-label="Copy hex code point for {{ icon.title | escape }}"
+        >
+          {{ icon.hex }}
+        </button>
+        <button
+          type="button"
+          class="card__footer-cell card__footer-cell--narrow"
+          data-copy="unicode"
+          aria-label="Copy unicode for {{ icon.title | escape }}"
+        >
+          U+
+        </button>
+        <button
+          type="button"
+          class="card__footer-cell card__footer-cell--narrow"
+          data-copy="class"
+          aria-label="Copy HTML class for {{ icon.title | escape }}"
+        >
+          &lt;/&gt;
+        </button>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <p class="empty-state" id="empty-state" hidden>No icons match your search.</p>
+</div>

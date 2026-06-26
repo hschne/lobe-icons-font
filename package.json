@@ -10,6 +10,7 @@
   "packageManager": "npm@11.17.0",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "build:docs": "node scripts/build-docs.mjs",
     "check": "tmp=$(mktemp -d) && cp codepoints.json dist/lobe-icons.ttf \"$tmp/\" && npm run build && cmp \"$tmp/codepoints.json\" codepoints.json && cmp \"$tmp/lobe-icons.ttf\" dist/lobe-icons.ttf"
   },
   "dependencies": {

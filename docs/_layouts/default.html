@@ -4,8 +4,61 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{{ page.title }} | {{ site.title }}</title>
+    <meta name="description" content="{{ site.description }}" />
+    <link rel="stylesheet" href="{{ '/assets/tokens.css' | relative_url }}" />
+    <link
+      rel="stylesheet"
+      href="{{ '/assets/lobe-icons.css' | relative_url }}"
+    />
+    <link rel="stylesheet" href="{{ '/assets/main.css' | relative_url }}" />
   </head>
   <body>
-    {{ content }}
+    <div class="aurora" aria-hidden="true">
+      <div class="aurora__layer"></div>
+    </div>
+
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="site-header__brand" href="{{ '/' | relative_url }}">
+          <i class="li li-lobehub" aria-hidden="true"></i>
+          <span>{{ site.title }}</span>
+        </a>
+        <a
+          class="btn btn--ghost"
+          href="https://github.com/hschne/lobe-icons-font"
+          rel="noreferrer"
+          target="_blank"
+        >
+          <i class="li li-github" aria-hidden="true"></i>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="site-main">{{ content }}</main>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <p>
+          © {{ site.time | date: '%Y' }} Lobe Icons Font. Icons by
+          <a
+            href="https://github.com/lobehub/lobe-icons"
+            rel="noreferrer"
+            target="_blank"
+            >LobeHub</a
+          >.
+        </p>
+        <p>
+          Made with 🤖 by
+          <a href="https://github.com/hschne" rel="noreferrer" target="_blank"
+            >@hschne</a
+          >
+        </p>
+      </div>
+    </footer>
+
+    <div class="toast" role="status" aria-live="polite"></div>
+
+    <script src="{{ '/assets/app.js' | relative_url }}" defer></script>
   </body>
 </html>

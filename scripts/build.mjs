@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { dirname, join } from "node:path";
 import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
@@ -53,13 +53,15 @@ function collectIcons() {
       sourceName: entry.name,
     }))
     .filter((icon) => /^[a-z0-9]+$/.test(icon.name))
-    .filter((icon) => hasMonoComponent(icon.sourceName))
+    .filter((icon) =>
+      hasFile(join(SOURCE_DIR, icon.sourceName, "components/Mono.js")),
+    )
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
-function hasMonoComponent(sourceName) {
+function hasFile(path) {
   try {
-    readFileSync(join(SOURCE_DIR, sourceName, "components/Mono.js"), "utf8");
+    readFileSync(path, "utf8");
     return true;
   } catch (error) {
     if (error.code === "ENOENT") return false;
@@ -68,38 +70,34 @@ function hasMonoComponent(sourceName) {
 }
 
 function readCodepoints() {
-  let raw;
-
   try {
-    raw = JSON.parse(readFileSync(CODEPOINTS_PATH, "utf8"));
+    const raw = JSON.parse(readFileSync(CODEPOINTS_PATH, "utf8"));
+    const pins = new Map();
+    const used = new Map();
+
+    for (const [name, codepoint] of Object.entries(raw)) {
+      if (!Number.isInteger(codepoint))
+        throw new Error(`Invalid codepoint for ${name}: ${codepoint}`);
+      if (codepoint < BASE_CODEPOINT || codepoint > CEILING_CODEPOINT) {
+        throw new Error(
+          `Codepoint for ${name} is outside ${formatCodepoint(BASE_CODEPOINT)}-${formatCodepoint(CEILING_CODEPOINT)}: ${formatCodepoint(codepoint)}`,
+        );
+      }
+      if (used.has(codepoint)) {
+        throw new Error(
+          `Duplicate codepoint ${formatCodepoint(codepoint)} for ${used.get(codepoint)} and ${name}`,
+        );
+      }
+
+      pins.set(name, codepoint);
+      used.set(codepoint, name);
+    }
+
+    return pins;
   } catch (error) {
     if (error.code === "ENOENT") return new Map();
     throw error;
   }
-
-  const pins = new Map();
-  const used = new Map();
-
-  for (const [name, codepoint] of Object.entries(raw)) {
-    if (!Number.isInteger(codepoint)) {
-      throw new Error(`Invalid codepoint for ${name}: ${codepoint}`);
-    }
-    if (codepoint < BASE_CODEPOINT || codepoint > CEILING_CODEPOINT) {
-      throw new Error(
-        `Codepoint for ${name} is outside ${formatCodepoint(BASE_CODEPOINT)}-${formatCodepoint(CEILING_CODEPOINT)}: ${formatCodepoint(codepoint)}`,
-      );
-    }
-    if (used.has(codepoint)) {
-      throw new Error(
-        `Duplicate codepoint ${formatCodepoint(codepoint)} for ${used.get(codepoint)} and ${name}`,
-      );
-    }
-
-    pins.set(name, codepoint);
-    used.set(codepoint, name);
-  }
-
-  return pins;
 }
 
 function assignCodepoints(icons, pins) {
@@ -107,10 +105,7 @@ function assignCodepoints(icons, pins) {
     pins.size === 0 ? BASE_CODEPOINT : Math.max(...pins.values()) + 1;
 
   for (const { name } of icons) {
-    if (pins.has(name)) continue;
-
-    pins.set(name, nextCodepoint);
-    nextCodepoint += 1;
+    if (!pins.has(name)) pins.set(name, nextCodepoint++);
   }
 
   const used = Math.max(...pins.values());
@@ -152,30 +147,41 @@ function generateSvgFont(icons, pins) {
 }
 
 function componentToSvg(sourceName) {
-  const monoPath = join(SOURCE_DIR, sourceName, "components/Mono.js");
-  const colorPath = join(SOURCE_DIR, sourceName, "components/Color.js");
-  let source = readFileSync(monoPath, "utf8");
+  let source = readFileSync(
+    join(SOURCE_DIR, sourceName, "components/Mono.js"),
+    "utf8",
+  );
   let paths = pathData(source);
 
   if (paths.length === 0) {
-    source = readFileSync(colorPath, "utf8");
+    source = readFileSync(
+      join(SOURCE_DIR, sourceName, "components/Color.js"),
+      "utf8",
+    );
     paths = pathData(source);
   }
-
   if (paths.length === 0)
     throw new Error(`No path data found for ${sourceName}`);
 
-  const viewBox = firstMatch(source, /viewBox: "([^"]+)"/) ?? "0 0 24 24";
-  const body = paths.map((path) => `<path d="${escapeXml(path)}"/>`).join("");
+  const viewBox = source.match(/viewBox: "([^"]+)"/)?.[1] ?? "0 0 24 24";
+  // Some icons (e.g. ZenMux) author their path in a larger coordinate space and
+  // fit it to the viewBox with a wrapping <g transform="scale(...)">. Bake that
+  // transform into the path data; otherwise the oversized outline escapes the
+  // viewBox and blows out the font's bounds and vertical metrics.
+  const transform = source.match(/transform: "([^"]+)"/)?.[1];
+  const body = paths
+    .map((path) => {
+      const d = transform
+        ? svgpath(path).transform(transform).round(3).toString()
+        : path;
+      return `<path d="${escapeXml(d)}"/>`;
+    })
+    .join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">${body}</svg>`;
 }
 
 function pathData(source) {
   return [...source.matchAll(/\bd: "([^"]+)"/g)].map((match) => match[1]);
-}
-
-function firstMatch(source, pattern) {
-  return source.match(pattern)?.[1];
 }
 
 function escapeXml(value) {
@@ -217,11 +223,11 @@ function repositionSvgFont(svgFont) {
 function buildTtf(svgFont, icons, pins) {
   const expectedCodepoints = icons.map((icon) => pins.get(icon.name));
   const ttf = Buffer.from(svg2ttf(svgFont, { ts: sourceDateEpoch() }).buffer);
+  const bounds = readHeadBounds(ttf);
 
-  const fontBounds = recalculateGlyphBounds(ttf);
-  fixTtfMetrics(ttf, fontBounds);
+  fixTtfMetrics(ttf, bounds);
   assertFormat12Mappings(ttf, expectedCodepoints);
-  assertMetricsCoverBounds(ttf, fontBounds);
+  assertMetricsCoverBounds(ttf, bounds);
   recalculateChecksums(ttf);
 
   return ttf;
@@ -234,22 +240,19 @@ function sourceDateEpoch() {
   return value;
 }
 
-function fixTtfMetrics(ttf, fontBounds) {
+function fixTtfMetrics(ttf, bounds) {
   const tables = readTableDirectory(ttf);
   const hhea = requireTable(tables, "hhea");
   const os2 = requireTable(tables, "OS/2");
-  const descent = Math.max(
-    FONT_DESCENT,
-    fontBounds ? Math.max(0, -fontBounds.yMin) : 0,
-  );
-  const winAscent = Math.max(WIN_ASCENT, fontBounds?.yMax ?? 0);
-  const typoAscender = Math.max(FONT_HEIGHT, fontBounds?.yMax ?? 0);
+  const descent = Math.max(FONT_DESCENT, -bounds.yMin);
+  const ascent = Math.max(FONT_HEIGHT, bounds.yMax);
+  const winAscent = Math.max(WIN_ASCENT, bounds.yMax);
 
-  ttf.writeInt16BE(typoAscender, hhea.offset + 4);
+  ttf.writeInt16BE(ascent, hhea.offset + 4);
   ttf.writeInt16BE(-descent, hhea.offset + 6);
   ttf.writeInt16BE(0, hhea.offset + 8);
 
-  ttf.writeInt16BE(typoAscender, os2.offset + 68);
+  ttf.writeInt16BE(ascent, os2.offset + 68);
   ttf.writeInt16BE(-descent, os2.offset + 70);
   ttf.writeInt16BE(0, os2.offset + 72);
   ttf.writeUInt16BE(winAscent, os2.offset + 74);
@@ -260,207 +263,27 @@ function assertMetricsCoverBounds(ttf, bounds) {
   const tables = readTableDirectory(ttf);
   const hhea = requireTable(tables, "hhea");
   const os2 = requireTable(tables, "OS/2");
-  const hheaAscender = ttf.readInt16BE(hhea.offset + 4);
-  const hheaDescender = ttf.readInt16BE(hhea.offset + 6);
-  const typoAscender = ttf.readInt16BE(os2.offset + 68);
-  const typoDescender = ttf.readInt16BE(os2.offset + 70);
-  const winAscent = ttf.readUInt16BE(os2.offset + 74);
-  const winDescent = ttf.readUInt16BE(os2.offset + 76);
 
-  if (!bounds) throw new Error("Generated font has no glyph bounds");
-  if (hheaAscender < bounds.yMax)
+  if (ttf.readInt16BE(hhea.offset + 4) < bounds.yMax)
     throw new Error("hhea ascender does not cover glyph bounds");
-  if (hheaDescender > bounds.yMin)
+  if (ttf.readInt16BE(hhea.offset + 6) > bounds.yMin)
     throw new Error("hhea descender does not cover glyph bounds");
-  if (typoAscender < bounds.yMax)
+  if (ttf.readInt16BE(os2.offset + 68) < bounds.yMax)
     throw new Error("OS/2 ascender does not cover glyph bounds");
-  if (typoDescender > bounds.yMin)
+  if (ttf.readInt16BE(os2.offset + 70) > bounds.yMin)
     throw new Error("OS/2 descender does not cover glyph bounds");
-  if (winAscent < bounds.yMax)
+  if (ttf.readUInt16BE(os2.offset + 74) < bounds.yMax)
     throw new Error("OS/2 winAscent does not cover glyph bounds");
-  if (winDescent < -bounds.yMin)
+  if (ttf.readUInt16BE(os2.offset + 76) < -bounds.yMin)
     throw new Error("OS/2 winDescent does not cover glyph bounds");
-}
-
-function recalculateGlyphBounds(ttf) {
-  const tables = readTableDirectory(ttf);
-  const head = requireTable(tables, "head");
-  const glyf = requireTable(tables, "glyf");
-  const glyphRanges = readGlyphRanges(ttf, tables);
-  let fontBounds;
-
-  for (const { start, end } of glyphRanges) {
-    if (start === end) continue;
-
-    const glyphOffset = glyf.offset + start;
-    const bounds = glyphBounds(ttf, glyphOffset);
-    if (!bounds) continue;
-
-    writeGlyphBounds(ttf, glyphOffset, bounds);
-    fontBounds = mergeBounds(fontBounds, bounds);
-  }
-
-  if (fontBounds) writeFontBounds(ttf, head.offset, fontBounds);
-  return fontBounds;
-}
-
-function readGlyphRanges(ttf, tables) {
-  const head = requireTable(tables, "head");
-  const loca = requireTable(tables, "loca");
-  const maxp = requireTable(tables, "maxp");
-  const numGlyphs = ttf.readUInt16BE(maxp.offset + 4);
-  const indexToLocFormat = ttf.readInt16BE(head.offset + 50);
-  const offsets = [];
-
-  for (let index = 0; index <= numGlyphs; index += 1) {
-    if (indexToLocFormat === 0) {
-      offsets.push(ttf.readUInt16BE(loca.offset + index * 2) * 2);
-    } else {
-      offsets.push(ttf.readUInt32BE(loca.offset + index * 4));
-    }
-  }
-
-  return offsets
-    .slice(0, -1)
-    .map((start, index) => ({ start, end: offsets[index + 1] }));
-}
-
-function glyphBounds(ttf, glyphOffset) {
-  const contourCount = ttf.readInt16BE(glyphOffset);
-  if (contourCount < 0) return readStoredGlyphBounds(ttf, glyphOffset);
-  if (contourCount === 0) return null;
-
-  const pointCount =
-    ttf.readUInt16BE(glyphOffset + 10 + (contourCount - 1) * 2) + 1;
-  const flags = readGlyphFlags(ttf, glyphOffset, contourCount, pointCount);
-  const xCoordinates = readGlyphCoordinates(
-    ttf,
-    flags.endOffset,
-    flags.values,
-    0x02,
-    0x10,
-  );
-  const yCoordinates = readGlyphCoordinates(
-    ttf,
-    xCoordinates.endOffset,
-    flags.values,
-    0x04,
-    0x20,
-  );
-
-  return coordinatesBounds(xCoordinates.values, yCoordinates.values);
-}
-
-function readGlyphFlags(ttf, glyphOffset, contourCount, pointCount) {
-  const values = [];
-  const instructionLengthOffset = glyphOffset + 10 + contourCount * 2;
-  const instructionLength = ttf.readUInt16BE(instructionLengthOffset);
-  let offset = instructionLengthOffset + 2 + instructionLength;
-
-  while (values.length < pointCount) {
-    const flag = ttf.readUInt8(offset);
-    offset += 1;
-    values.push(flag);
-
-    if ((flag & 0x08) === 0) continue;
-
-    const repeats = ttf.readUInt8(offset);
-    offset += 1;
-    for (let index = 0; index < repeats; index += 1) values.push(flag);
-  }
-
-  return { values, endOffset: offset };
-}
-
-function readGlyphCoordinates(
-  ttf,
-  startOffset,
-  flags,
-  shortBit,
-  sameOrPositiveBit,
-) {
-  const values = [];
-  let offset = startOffset;
-  let coordinate = 0;
-
-  for (const flag of flags) {
-    const { delta, endOffset } = readCoordinateDelta(
-      ttf,
-      offset,
-      flag,
-      shortBit,
-      sameOrPositiveBit,
-    );
-    coordinate += delta;
-    offset = endOffset;
-    values.push(coordinate);
-  }
-
-  return { values, endOffset: offset };
-}
-
-function readCoordinateDelta(ttf, offset, flag, shortBit, sameOrPositiveBit) {
-  if ((flag & shortBit) !== 0) {
-    const value = ttf.readUInt8(offset);
-    const sign = (flag & sameOrPositiveBit) !== 0 ? 1 : -1;
-    return { delta: value * sign, endOffset: offset + 1 };
-  }
-
-  if ((flag & sameOrPositiveBit) !== 0) return { delta: 0, endOffset: offset };
-
-  return { delta: ttf.readInt16BE(offset), endOffset: offset + 2 };
-}
-
-function coordinatesBounds(xs, ys) {
-  return {
-    xMin: Math.min(...xs),
-    yMin: Math.min(...ys),
-    xMax: Math.max(...xs),
-    yMax: Math.max(...ys),
-  };
-}
-
-function readStoredGlyphBounds(ttf, glyphOffset) {
-  return {
-    xMin: ttf.readInt16BE(glyphOffset + 2),
-    yMin: ttf.readInt16BE(glyphOffset + 4),
-    xMax: ttf.readInt16BE(glyphOffset + 6),
-    yMax: ttf.readInt16BE(glyphOffset + 8),
-  };
-}
-
-function writeGlyphBounds(ttf, glyphOffset, bounds) {
-  ttf.writeInt16BE(bounds.xMin, glyphOffset + 2);
-  ttf.writeInt16BE(bounds.yMin, glyphOffset + 4);
-  ttf.writeInt16BE(bounds.xMax, glyphOffset + 6);
-  ttf.writeInt16BE(bounds.yMax, glyphOffset + 8);
-}
-
-function mergeBounds(current, next) {
-  if (!current) return { ...next };
-
-  return {
-    xMin: Math.min(current.xMin, next.xMin),
-    yMin: Math.min(current.yMin, next.yMin),
-    xMax: Math.max(current.xMax, next.xMax),
-    yMax: Math.max(current.yMax, next.yMax),
-  };
-}
-
-function writeFontBounds(ttf, headOffset, bounds) {
-  ttf.writeInt16BE(bounds.xMin, headOffset + 36);
-  ttf.writeInt16BE(bounds.yMin, headOffset + 38);
-  ttf.writeInt16BE(bounds.xMax, headOffset + 40);
-  ttf.writeInt16BE(bounds.yMax, headOffset + 42);
 }
 
 function assertFormat12Mappings(ttf, expectedCodepoints) {
   const mapped = readFormat12Mappings(ttf);
 
   for (const codepoint of expectedCodepoints) {
-    if (!mapped.has(codepoint)) {
+    if (!mapped.has(codepoint))
       throw new Error(`Missing cmap mapping for ${formatCodepoint(codepoint)}`);
-    }
   }
 }
 
@@ -489,6 +312,14 @@ function readFormat12Mappings(ttf) {
   if (mappings.size === 0)
     throw new Error("Generated font has no format-12 cmap mappings");
   return mappings;
+}
+
+function readHeadBounds(ttf) {
+  const head = requireTable(readTableDirectory(ttf), "head");
+  return {
+    yMin: ttf.readInt16BE(head.offset + 38),
+    yMax: ttf.readInt16BE(head.offset + 42),
+  };
 }
 
 function recalculateChecksums(ttf) {

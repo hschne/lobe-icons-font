@@ -52,9 +52,9 @@ The package version mirrors `@lobehub/icons`. To release:
 3. commit changed files
 4. run the manual **Release icons** GitHub Action
 
-The workflow creates tag `v<package version>` and uploads the font, codepoint
-map, and tarball. `codepoints.json` is shipped because users need it to look up
-glyphs.
+The workflow creates tag `v<package version>` and uploads `dist/lobe-icons.ttf`.
+Codepoint lookup belongs to the cheatsheet/site; `codepoints.json` stays in the
+repo as build source of truth.
 
 ## Install
 

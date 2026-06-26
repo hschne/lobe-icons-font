@@ -25,3 +25,20 @@ depends = ["install"]
 description = "Run project checks"
 run = "npm run check"
 depends = ["install"]
+
+[tasks."build:docs"]
+description = "Generate the cheat sheet's font CSS, data, and TTF into docs/"
+run = "npm run build:docs"
+depends = ["build"]
+
+[tasks."docs:install"]
+description = "Install the Jekyll site's Ruby dependencies"
+dir = "{{config_root}}/docs"
+run = "bundle install"
+sources = ["docs/Gemfile", "docs/Gemfile.lock"]
+
+[tasks.serve]
+description = "Build the font, generate site assets, and serve the cheat sheet"
+dir = "{{config_root}}/docs"
+run = "bundle exec jekyll serve"
+depends = ["build:docs", "docs:install"]
