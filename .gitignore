@@ -1,3 +1,4 @@
 node_modules/
-svg/
-dist/*.json
+release/
+lobe-icons-font-*.tar
+lobe-icons-font-*.tar.gz

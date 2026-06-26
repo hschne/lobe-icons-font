@@ -1,0 +1,110 @@
+/*
+ * Design tokens — Lobe Icons cheat sheet
+ * Philosophy: Swiss/utilitarian. Dense grid, monospace codepoints, minimal chrome.
+ * Dark-first (active on :root). A tuned light palette lives in the
+ * prefers-color-scheme block so light mode is values-only away — no toggle, no markup.
+ * See .design/icon-cheat-sheet/DESIGN_BRIEF.md.
+ */
+
+:root {
+  /* ----- Color (dark, active) -----
+   * Aligned to antd dark theme tokens (runtime values behind
+   * dumi-theme-lobehub / @lobehub/ui on icons.lobehub.com). */
+  --color-bg-primary: #000000; /* page background (lobehub html/body) */
+  --color-bg-secondary: #141414; /* card surface (colorBgContainer) */
+  --color-bg-tertiary: #1f1f1f; /* input wells, footer cells (colorBgElevated) */
+  --color-bg-hover: #262626; /* hover state on interactive cells */
+
+  --color-text-primary: #e6e6e6; /* titles, glyphs (colorText ~.88) */
+  --color-text-secondary: #a6a6a6; /* codepoints, labels (colorTextSecondary ~.65) */
+  --color-text-tertiary: #737373; /* placeholder, disabled (colorTextTertiary ~.45) */
+
+  --color-border-primary: #303030; /* card + control borders (colorBorderSecondary) */
+  --color-border-secondary: #262626; /* subtle internal dividers */
+  --color-border-focus: #1677ff; /* focus ring (colorPrimary) */
+
+  --color-accent: #1677ff; /* links, focus accent (colorPrimary) */
+  --color-accent-hover: #4096ff; /* colorPrimaryHover */
+  --color-success: #49aa19; /* copied confirmation (colorSuccess) */
+
+  /* ----- Spacing (4px base) ----- */
+  --space-0: 0;
+  --space-1: 0.25rem; /* 4 */
+  --space-2: 0.5rem; /* 8 */
+  --space-3: 0.75rem; /* 12 */
+  --space-4: 1rem; /* 16 */
+  --space-5: 1.5rem; /* 24 */
+  --space-6: 2rem; /* 32 */
+  --space-7: 3rem; /* 48 */
+  --space-8: 4rem; /* 64 */
+
+  /* ----- Typography ----- */
+  --font-family-body:
+    system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family-mono:
+    ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas,
+    monospace;
+
+  --font-size-xs: 0.75rem; /* 12 — footer copy labels */
+  --font-size-sm: 0.8125rem; /* 13 — codepoint mono */
+  --font-size-base: 0.9375rem; /* 15 — body, card title */
+  --font-size-lg: 1.125rem; /* 18 */
+  --font-size-xl: 1.5rem; /* 24 — page heading */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --line-height-tight: 1.2; /* headings */
+  --line-height-normal: 1.5; /* body */
+
+  --letter-spacing-wide: 0.02em; /* small labels */
+
+  /* ----- Layout ----- */
+  --max-width-page: 1080px; /* content column cap */
+  --grid-item-min: 160px; /* card min width, drives auto-fill columns */
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-full: 999px;
+
+  --shadow-focus: 0 0 0 3px
+    color-mix(in srgb, var(--color-border-focus) 40%, transparent);
+
+  /* ----- Motion ----- */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+ * Light palette — values only, not yet wired to a toggle (out of scope for v1).
+ * Mono glyphs use currentColor, so they invert for free. Kept AA-compliant.
+ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #fbfbfb;
+    --color-bg-tertiary: #f2f2f2;
+    --color-bg-hover: #e8e8e8;
+
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #595959;
+    --color-text-tertiary: #8c8c8c;
+
+    --color-border-primary: #e0e0e0;
+    --color-border-secondary: #ededed;
+    --color-border-focus: #0969da;
+
+    --color-accent: #0969da;
+    --color-accent-hover: #0860c4;
+    --color-success: #1a7f37;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+  }
+}

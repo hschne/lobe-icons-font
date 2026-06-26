@@ -2,16 +2,6 @@ name: Release icons
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: Release tag, for example v0.1.0
-        required: true
-        type: string
-      prerelease:
-        description: Mark the GitHub release as a prerelease
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   contents: write
@@ -26,47 +16,37 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build font
-        run: npm run build
-
-      - name: Verify generated files are committed
-        run: git diff --exit-code -- codepoints.json dist/lobe-icons.ttf
+      - name: Check generated files
+        run: npm run check
 
       - name: Package release artifact
         run: |
+          tag="v$(node -p "require('./package.json').version")"
           mkdir -p release
-          cp dist/lobe-icons.ttf codepoints.json README.md release/
-          tar -czf "lobe-icons-font-${{ inputs.tag }}.tar.gz" -C release lobe-icons.ttf codepoints.json README.md
+          cp dist/lobe-icons.ttf codepoints.json README.md LICENSE release/
+          tar -czf "lobe-icons-font-$tag.tar.gz" -C release lobe-icons.ttf codepoints.json README.md LICENSE
+          echo "tag=$tag" >> "$GITHUB_ENV"
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag }}
-          PRERELEASE: ${{ inputs.prerelease }}
         run: |
-          args=(
-            "$TAG"
-            dist/lobe-icons.ttf
-            codepoints.json
-            "lobe-icons-font-$TAG.tar.gz"
-            --target "$GITHUB_SHA"
-            --title "$TAG"
+          gh release create \
+            "$tag" \
+            dist/lobe-icons.ttf \
+            codepoints.json \
+            "lobe-icons-font-$tag.tar.gz" \
+            --target "$GITHUB_SHA" \
+            --title "$tag" \
             --notes "Built from $GITHUB_SHA."
-          )
-
-          if [[ "$PRERELEASE" == "true" ]]; then
-            args+=(--prerelease)
-          fi
-
-          gh release create "${args[@]}"
