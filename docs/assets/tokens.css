@@ -27,6 +27,9 @@
   --color-accent-hover: #4096ff; /* colorPrimaryHover */
   --color-success: #49aa19; /* copied confirmation (colorSuccess) */
 
+  /* Aurora separator bands: dark gaps on the black page. Inverts in light. */
+  --aurora-band: #000;
+
   /* ----- Spacing (4px base) ----- */
   --space-0: 0;
   --space-1: 0.25rem; /* 4 */
@@ -99,6 +102,9 @@
     --color-accent: #0969da;
     --color-accent-hover: #0860c4;
     --color-success: #1a7f37;
+
+    /* On a white page, light bands create the gaps instead of dark ones. */
+    --aurora-band: #fff;
   }
 }
 

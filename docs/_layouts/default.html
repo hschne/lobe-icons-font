@@ -3,8 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{{ page.title }} | {{ site.title }}</title>
-    <meta name="description" content="{{ site.description }}" />
+    {% seo %}
     <link rel="stylesheet" href="{{ '/assets/tokens.css' | relative_url }}" />
     <link
       rel="stylesheet"
@@ -28,6 +27,7 @@
           href="https://github.com/hschne/lobe-icons-font"
           rel="noreferrer"
           target="_blank"
+          title="View the project on GitHub"
         >
           <i class="li li-github" aria-hidden="true"></i>
           <span>GitHub</span>

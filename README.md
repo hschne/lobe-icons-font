@@ -5,7 +5,7 @@
 A glyph font of **309 monochrome AI / LLM provider logos** for terminals,
 status bars, and the web.
 
-[Browse the icons](https://hschne.github.io/lobe-icons-font/) ·
+[Browse the icons](https://lif.hansschnedlitz.com/) ·
 [Source icons by LobeHub](https://github.com/lobehub/lobe-icons)
 
 <img src="docs/assets/preview.png" alt="All 309 Lobe Icons Font glyphs, each shown next to its name" width="100%" />
@@ -42,7 +42,7 @@ On the **Web**, load the hosted stylesheet and use a class per icon:
 ```html
 <link
   rel="stylesheet"
-  href="https://hschne.github.io/lobe-icons-font/assets/lobe-icons.css"
+  href="https://lif.hansschnedlitz.com/assets/lobe-icons.css"
 />
 <i class="li li-anthropic"></i>
 ```

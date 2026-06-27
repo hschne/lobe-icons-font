@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Icons
+image: /assets/og.png
 ---
 
 <div class="page">
@@ -9,8 +10,15 @@ title: Icons
       Lobe Icons <span class="hero__accent">Font</span>
     </h1>
     <p class="hero__subtitle">
-      A glyph font of {{ site.data.icons | size }} monochrome AI / LLM provider
-      icons for terminals, status bars, and the web.
+      A glyph font of 300+ monochrome AI / LLM provider icons for terminals,
+      status bars, and the web. Based on
+      <a
+        class="hero__link"
+        href="https://github.com/lobehub/lobe-icons"
+        rel="noreferrer"
+        target="_blank"
+        ><i class="li li-lobehub" aria-hidden="true"></i> Lobe Icons</a
+      >.
     </p>
     <div class="hero__actions">
       <a
@@ -18,15 +26,21 @@ title: Icons
         href="https://github.com/hschne/lobe-icons-font"
         rel="noreferrer"
         target="_blank"
+        title="View the project on GitHub"
       >
         <i class="li li-github" aria-hidden="true"></i>
         <span>GitHub</span>
       </a>
-      <a class="btn btn--outline" href="#grid">Browse icons</a>
+      <a
+        class="btn btn--outline"
+        href="#search"
+        title="Jump to the icon browser"
+        >Browse icons</a
+      >
     </div>
   </section>
 
-  <div class="search">
+  <div class="search" id="search">
     <label class="search__label" for="search-input">Search icons</label>
     <svg
       class="search__icon"
@@ -64,6 +78,7 @@ title: Icons
         class="card__glyph"
         data-copy="glyph"
         aria-label="Copy glyph for {{ icon.title | escape }}"
+        title="Copy glyph"
       >
         <i class="li li-{{ icon.slug }}" aria-hidden="true"></i>
       </button>
@@ -72,14 +87,6 @@ title: Icons
         <span class="card__title" title="{{ icon.title | escape }}"
           >{{ icon.title }}</span
         >
-        <button
-          type="button"
-          class="card__icon-btn"
-          data-copy="class"
-          aria-label="Copy HTML class for {{ icon.title | escape }}"
-        >
-          <span class="card__icon-btn-glyph" aria-hidden="true">&#x2398;</span>
-        </button>
       </div>
 
       <div class="card__footer">
@@ -88,6 +95,7 @@ title: Icons
           class="card__footer-cell card__hex"
           data-copy="hex"
           aria-label="Copy hex code point for {{ icon.title | escape }}"
+          title="Copy hex code point"
         >
           {{ icon.hex }}
         </button>
@@ -96,6 +104,7 @@ title: Icons
           class="card__footer-cell card__footer-cell--narrow"
           data-copy="unicode"
           aria-label="Copy unicode for {{ icon.title | escape }}"
+          title="Copy unicode"
         >
           U+
         </button>
@@ -104,6 +113,7 @@ title: Icons
           class="card__footer-cell card__footer-cell--narrow"
           data-copy="class"
           aria-label="Copy HTML class for {{ icon.title | escape }}"
+          title="Copy HTML class"
         >
           &lt;/&gt;
         </button>

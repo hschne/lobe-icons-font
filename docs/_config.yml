@@ -1,2 +1,15 @@
 title: Lobe Icons Font
-description: A glyph font of LobeHub AI provider icons.
+description: >-
+  A glyph font of 300+ monochrome AI / LLM provider icons for terminals,
+  status bars, and the web.
+url: https://lif.hansschnedlitz.com
+baseurl: ""
+lang: en
+author: hschne
+image: /assets/og.png
+twitter:
+  username: hschne
+  card: summary_large_image
+
+plugins:
+  - jekyll-seo-tag

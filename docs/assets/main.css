@@ -44,11 +44,11 @@ body {
   background-image:
     repeating-linear-gradient(
       100deg,
-      #000 0%,
-      #000 7%,
+      var(--aurora-band) 0%,
+      var(--aurora-band) 7%,
       transparent 10%,
       transparent 12%,
-      #000 16%
+      var(--aurora-band) 16%
     ),
     repeating-linear-gradient(
       100deg,
@@ -117,7 +117,13 @@ body {
 }
 
 .btn--solid:hover {
-  background: #fff;
+  /* Lighten/darken the inverted surface relative to the page so the label
+     stays legible in both dark and light palettes. */
+  background: color-mix(
+    in srgb,
+    var(--color-text-primary) 88%,
+    var(--color-bg-primary)
+  );
 }
 
 .btn--outline {
@@ -253,17 +259,32 @@ body {
   letter-spacing: -0.02em;
 }
 
+/* Solid fallback first; gradient text only where background-clip is supported,
+   otherwise the word would render invisible. */
 .hero__accent {
-  background: linear-gradient(
-    90deg,
-    #3b82f6,
-    #93c5fd 40%,
-    #a5b4fc 70%,
-    #60a5fa
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--color-accent);
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .hero__accent {
+    background: linear-gradient(
+      90deg,
+      #3b82f6,
+      #93c5fd 40%,
+      #a5b4fc 70%,
+      #60a5fa
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* The pale-blue stops fail contrast on a white page; darken for light mode. */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .hero__accent {
+      background-image: linear-gradient(90deg, #0a5cc0, #2b7fff 50%, #0969da);
+    }
+  }
 }
 
 .hero__subtitle {
@@ -271,6 +292,22 @@ body {
   max-width: 36rem;
   color: var(--color-text-secondary);
   font-size: var(--font-size-lg);
+}
+
+.hero__link {
+  color: var(--color-text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.hero__link:hover {
+  border-bottom-color: var(--color-text-primary);
+}
+
+.hero__link .li {
+  font-size: 1.1em;
+  vertical-align: -0.12em;
 }
 
 .hero__actions {
@@ -285,6 +322,7 @@ body {
   position: relative;
   margin: 0 auto var(--space-5);
   max-width: 640px;
+  scroll-margin-top: 5.5rem;
 }
 
 .search__label {
@@ -294,14 +332,14 @@ body {
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
 
 .search__icon {
   position: absolute;
-  left: var(--space-4);
+  inset-inline-start: var(--space-4);
   top: 50%;
   transform: translateY(-50%);
   width: 18px;
@@ -338,7 +376,12 @@ body {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--grid-item-min), 1fr));
+  /* auto-fit collapses empty tracks so filtered results stretch instead of
+     hugging the left; min() guards against overflow below the track min. */
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(var(--grid-item-min), 100%), 1fr)
+  );
   gap: var(--space-3);
   scroll-margin-top: var(--space-7);
 }
@@ -355,6 +398,9 @@ body {
   border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-md);
   overflow: hidden;
+  /* 300+ cards render up front; skip layout/paint for off-screen ones. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 156px;
 }
 
 .card__glyph {
@@ -378,8 +424,9 @@ body {
 }
 
 .card__glyph:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+  /* Inset so the ring isn't clipped by the card's overflow: hidden. */
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: -2px;
 }
 
 .card__title-row {
@@ -396,33 +443,6 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.card__icon-btn {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  line-height: 1;
-}
-
-.card__icon-btn:hover {
-  background: var(--color-bg-hover);
-  color: var(--color-text-primary);
-}
-
-.card__icon-btn:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
 }
 
 /* ----- Card footer (hex | U+ | </>) ----- */
@@ -464,14 +484,17 @@ body {
 }
 
 .card__footer-cell:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+  /* Inset so the ring isn't clipped by the card's overflow: hidden. */
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: -2px;
   z-index: 1;
 }
 
-/* Copied confirmation: brief success tint via a data attribute toggled in JS. */
-.is-copied {
-  color: var(--color-success) !important;
+/* Copied confirmation: brief success tint. Scoped selectors beat the base
+   button colors without resorting to !important. */
+.card__glyph.is-copied,
+.card__footer-cell.is-copied {
+  color: var(--color-success);
 }
 
 /* ----- Empty state ----- */
