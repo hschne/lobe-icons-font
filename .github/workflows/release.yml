@@ -138,8 +138,9 @@ jobs:
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
+        env:
+          BUNDLE_GEMFILE: ${{ github.workspace }}/docs/Gemfile
         with:
-          working-directory: docs
           bundler-cache: true
 
       - name: Setup Pages
@@ -178,6 +179,14 @@ jobs:
         run: |
           version="${{ needs.detect.outputs.version }}"
           tag="v$version"
+          lobe_icons_release_url="https://github.com/lobehub/lobe-icons/releases/tag/$tag"
+          notes_file="$(mktemp)"
+
+          cat > "$notes_file" <<EOF
+          This release mirrors the corresponding lobe-icons release: [lobehub/lobe-icons $tag]($lobe_icons_release_url).
+
+          Built from @lobehub/icons $version.
+          EOF
 
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "Release $tag already exists."
@@ -188,7 +197,7 @@ jobs:
             "$tag" \
             dist/lobe-icons.ttf \
             --title "$tag" \
-            --notes "Built from @lobehub/icons $version."
+            --notes-file "$notes_file"
 
   deploy-docs:
     if: needs.detect.outputs.should_build == 'true'

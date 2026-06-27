@@ -53,7 +53,7 @@ On the **Web**, load the hosted stylesheet and use a class per icon:
 npm run build
 ```
 
-The build is one Node script. It collects monochrome icons from `@lobehub/icons/es/*/components/Mono.js` and generates the TTF. The package version mirrors `@lobehub/icons`.
+The build is one Node script. It collects monochrome icons from `@lobehub/icons/es/*/components/Mono.js` and generates the TTF. The package version and releases mirror `@lobehub/icons`.
 
 ## Credits & license
 
