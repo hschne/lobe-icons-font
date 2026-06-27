@@ -3,7 +3,28 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    {% seo %}
+    {% seo %} {%- comment -%} jekyll-seo-tag emits og:description only on a
+    combined twitter/og meta. Naive preview testers bucket by name= and miss it,
+    so emit a standalone tag too; compliant scrapers dedupe on identical
+    content. {%- endcomment -%}
+    <meta
+      property="og:description"
+      content="{{ page.description | default: site.description | strip_html | normalize_whitespace | escape }}"
+    />
+    <link
+      rel="icon"
+      href="{{ '/assets/favicon.ico' | relative_url }}"
+      sizes="any"
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{{ '/assets/favicon.svg' | relative_url }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="{{ '/assets/apple-touch-icon.png' | relative_url }}"
+    />
     <link rel="stylesheet" href="{{ '/assets/tokens.css' | relative_url }}" />
     <link
       rel="stylesheet"
