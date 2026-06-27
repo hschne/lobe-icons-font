@@ -490,11 +490,30 @@ body {
   z-index: 1;
 }
 
-/* Copied confirmation: brief success tint. Scoped selectors beat the base
-   button colors without resorting to !important. */
-.card__glyph.is-copied,
-.card__footer-cell.is-copied {
-  color: var(--color-success);
+/* Copied confirmation: a quick press-and-settle bounce on the clicked button. */
+@keyframes copy-bounce {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(0.86);
+  }
+  70% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.is-copied {
+  animation: copy-bounce var(--duration-normal) var(--easing-default);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-copied {
+    animation: none;
+  }
 }
 
 /* ----- Empty state ----- */

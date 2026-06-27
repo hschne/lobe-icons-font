@@ -64,7 +64,8 @@
 
   function flashButton(button) {
     button.classList.add("is-copied");
-    setTimeout(() => button.classList.remove("is-copied"), 1000);
+    // Match the bounce animation so a rapid re-click can replay it.
+    setTimeout(() => button.classList.remove("is-copied"), 300);
   }
 
   grid.addEventListener("click", async (event) => {
