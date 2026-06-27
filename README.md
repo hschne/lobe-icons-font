@@ -55,8 +55,20 @@ npm run build
 
 The build is one Node script. It collects monochrome icons from `@lobehub/icons/es/*/components/Mono.js` and generates the TTF. The package version and releases mirror `@lobehub/icons`.
 
-## Credits & license
+## Trademark & license
 
-Icons are from [LobeHub](https://github.com/lobehub/lobe-icons). Brand logos may
-be subject to their owners' trademarks and copyright — fine for personal use,
-check before redistributing. The build tooling in this repo is MIT licensed.
+The build tooling in this repo is MIT licensed (see [LICENSE](LICENSE)).
+
+The glyphs are derived from [LobeHub](https://github.com/lobehub/lobe-icons)'s
+lobe-icons and depict third-party logos. All product names, logos, and brands
+are the property of their respective owners. They appear here for identification
+only (nominative use) and do not imply any affiliation with, sponsorship by, or
+endorsement from those companies. Brand logos are trademarks and are not covered
+by the MIT license.
+
+This font is meant for personal use - theming terminals, status bars, and
+prompts. If you redistribute, bundle it into a product, or use it commercially,
+review each brand's trademark guidelines first.
+
+Brand owner and want your logo removed? [Open an issue](https://github.com/hschne/lobe-icons-font/issues/new)
+and I'll drop it.
