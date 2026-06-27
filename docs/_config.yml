@@ -1,11 +1,14 @@
 title: Lobe Icons Font
+tagline: AI / LLM provider icon font
 description: >-
   A glyph font of 300+ monochrome AI / LLM provider icons for terminals,
   status bars, and the web.
 url: https://lif.hansschnedlitz.com
 baseurl: ""
 lang: en
-author: hschne
+author:
+  name: Hans Schnedlitz
+  twitter: hschnedlitz
 image: /assets/og.png
 twitter:
   username: hschnedlitz
