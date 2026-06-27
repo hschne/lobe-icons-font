@@ -97,7 +97,7 @@ image: /assets/og.png
           aria-label="Copy hex code point for {{ icon.title | escape }}"
           title="Copy hex code point"
         >
-          {{ icon.hex }}
+          <span class="card__cell-label">{{ icon.hex }}</span>
         </button>
         <button
           type="button"
@@ -106,7 +106,7 @@ image: /assets/og.png
           aria-label="Copy unicode for {{ icon.title | escape }}"
           title="Copy unicode"
         >
-          U+
+          <span class="card__cell-label">U+</span>
         </button>
         <button
           type="button"
@@ -115,7 +115,7 @@ image: /assets/og.png
           aria-label="Copy HTML class for {{ icon.title | escape }}"
           title="Copy HTML class"
         >
-          &lt;/&gt;
+          <span class="card__cell-label">&lt;/&gt;</span>
         </button>
       </div>
     </li>

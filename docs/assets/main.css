@@ -506,12 +506,19 @@ body {
   }
 }
 
-.is-copied {
+/* Bounce only the glyph / label, not the whole button box. */
+.card__cell-label {
+  display: inline-block;
+}
+
+.card__glyph.is-copied .li,
+.card__footer-cell.is-copied .card__cell-label {
   animation: copy-bounce var(--duration-normal) var(--easing-default);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .is-copied {
+  .card__glyph.is-copied .li,
+  .card__footer-cell.is-copied .card__cell-label {
     animation: none;
   }
 }
