@@ -376,10 +376,11 @@ body {
   margin: 0;
   padding: 0;
   display: grid;
-  /* auto-fit collapses empty tracks so filtered results stretch instead of
-     hugging the left; min() guards against overflow below the track min. */
+  /* auto-fill keeps empty tracks so a handful of filtered results stay their
+     natural width instead of stretching across the row; min() guards against
+     overflow below the track min. */
   grid-template-columns: repeat(
-    auto-fit,
+    auto-fill,
     minmax(min(var(--grid-item-min), 100%), 1fr)
   );
   gap: var(--space-3);
