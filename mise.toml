@@ -5,7 +5,7 @@ PROJECT_NAME = "{{ config_root | basename }}"
 _.path = ["{{config_root}}/node_modules/.bin"]
 
 [tools]
-# Picked up from .ruby-version and .node-version
+actionlint = "latest"
 
 [settings]
 experimental = true
