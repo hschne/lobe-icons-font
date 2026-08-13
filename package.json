@@ -1,6 +1,6 @@
 {
   "name": "lobe-icons-font",
-  "version": "5.15.0",
+  "version": "5.16.0",
   "private": true,
   "description": "Glyph font of lobehub AI/LLM provider icons for terminals and waybar",
   "license": "MIT",
@@ -14,7 +14,7 @@
     "check": "tmp=$(mktemp -d) && cp codepoints.json dist/lobe-icons.ttf \"$tmp/\" && npm run build && cmp \"$tmp/codepoints.json\" codepoints.json && cmp \"$tmp/lobe-icons.ttf\" dist/lobe-icons.ttf"
   },
   "dependencies": {
-    "@lobehub/icons": "5.15.0"
+    "@lobehub/icons": "5.16.0"
   },
   "devDependencies": {
     "svg2ttf": "6.1.0",
